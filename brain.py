@@ -1,7 +1,18 @@
 from random import random
+import math
+
+from vpython import vec
 
 def relu(x):
     return x * (0.1 if x<0 else 1.0)
+
+def logistic(x):
+    if x > 500:
+        return 1
+    elif x < -500:
+        return 0
+    else:
+        return 1 / (1 + math.exp(-x))
 
 def get_color(value, min_th=-2.0, max_th=2.0):
     # Normalize value between -1 and 1
@@ -49,13 +60,33 @@ class Brain:
 
         self.N_tot = N_in + N_out
 
+        # Input neurons use relu
         self.input_neurons = [Neuron(relu, n) for n in range(N_in)]
-        self.output_neurons = [Neuron(relu, n) for n in range(N_out)]
+        # Output neurons use logistic function to get 0-1 range
+        self.output_neurons = [Neuron(logistic, n) for n in range(N_out)]
 
+        # Initialize weights between -1 and 1
         for i in self.input_neurons:
             for j in self.output_neurons:
                 i.connect(j, random() * 2 - 1)
 
+    def forward(self, inputs):
+        # Reset all neurons
+        for n in self.input_neurons + self.output_neurons:
+            n.preval = 0.0
+            n.val = 0.0
+        
+        # Set input values
+        for n, inp in zip(self.input_neurons, inputs):
+            n.val = inp
+            n.propagate()
+        
+        # Activate output neurons
+        for n in self.output_neurons:
+            n.activate()
+        
+        # Return output values
+        return [n.val for n in self.output_neurons]
 
 if __name__ == "__main__":
     from vpython import *
